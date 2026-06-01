@@ -1,6 +1,5 @@
 from pathlib import Path
-
-import kagglehub
+import subprocess
 
 from src.common.logger import logger
 
@@ -9,23 +8,45 @@ class KaggleDownloader:
 
     def download_dataset(
         self,
-        competition_name: str
+        competition_name: str,
+        download_path: Path
     ) -> Path:
 
         logger.info(
-            f"Downloading dataset: "
+            f"Downloading dataset from competition: "
             f"{competition_name}"
         )
 
-        dataset_path = (
-            kagglehub.competition_download(
-                competition_name
-            )
+        download_path.mkdir(
+            parents=True,
+            exist_ok=True
         )
+
+        command = [
+            "kaggle",
+            "competitions",
+            "download",
+            "-c",
+            competition_name,
+            "-p",
+            str(download_path)
+        ]
+
+        result = subprocess.run(
+            command,
+            capture_output=True,
+            text=True
+        )
+
+        if result.returncode != 0:
+
+            raise RuntimeError(
+                f"Dataset download failed:\n"
+                f"{result.stderr}"
+            )
 
         logger.info(
-            f"Dataset downloaded to: "
-            f"{dataset_path}"
+            "Dataset downloaded successfully"
         )
 
-        return Path(dataset_path)
+        return download_path

@@ -36,3 +36,7 @@ class DataIngestionConfig:
     extracted_dir: Path = Path(
         "data/raw/m5/extracted"
     )
+    
+    validation_dir: Path = Path(
+        "data/raw/m5/extracted"
+    )

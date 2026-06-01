@@ -1,17 +1,19 @@
-from src.ingestion.data_ingestion import DataIngestion
+from src.ingestion.data_ingestion import (
+    DataIngestion
+)
 
 
 def main():
 
     ingestion = DataIngestion()
 
-    download_path = (
-        ingestion.download_dataset()
+    result = (
+        ingestion.run_validation_pipeline()
     )
 
-    print(download_path)
-
-    print(metadata)
+    print(
+        f"Pipeline Result: {result}"
+    )
 
 
 if __name__ == "__main__":
