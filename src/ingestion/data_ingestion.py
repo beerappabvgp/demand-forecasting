@@ -1,5 +1,5 @@
 from pathlib import Path
-
+from src.ingestion.registration.dataset_registration import DatasetRegistration
 from src.common.logger import logger
 from src.common.exceptions import DatasetNotFoundException
 from src.ingestion.config import DataIngestionConfig
@@ -26,3 +26,21 @@ class DataIngestion:
         logger.info("Dataset directory verified")
 
         return dataset_path
+
+    def register_dataset(self):
+
+        dataset_path = (
+            self.verify_dataset_directory()
+        )
+
+        registration_service = (
+            DatasetRegistration()
+        )
+
+        metadata = (
+            registration_service.register_dataset(
+                dataset_path
+            )
+        )
+
+        return metadata

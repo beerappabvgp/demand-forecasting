@@ -5,13 +5,11 @@ def main():
 
     ingestion = DataIngestion()
 
-    dataset_path = (
-        ingestion.verify_dataset_directory()
+    metadata = (
+        ingestion.register_dataset()
     )
 
-    print(
-        f"Dataset verified: {dataset_path}"
-    )
+    print(metadata)
 
 
 if __name__ == "__main__":
