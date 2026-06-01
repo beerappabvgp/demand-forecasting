@@ -1,0 +1,10 @@
+project:
+  name: demand-forecasting-platform
+
+data:
+  raw_path: data/raw
+  processed_path: data/processed
+  features_path: data/features
+
+mlflow:
+  tracking_uri: http://localhost:5000
