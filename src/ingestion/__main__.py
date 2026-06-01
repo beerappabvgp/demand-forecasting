@@ -5,9 +5,11 @@ def main():
 
     ingestion = DataIngestion()
 
-    metadata = (
-        ingestion.register_dataset()
+    download_path = (
+        ingestion.download_dataset()
     )
+
+    print(download_path)
 
     print(metadata)
 

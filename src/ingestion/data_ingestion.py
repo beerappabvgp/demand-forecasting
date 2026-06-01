@@ -3,7 +3,9 @@ from src.ingestion.registration.dataset_registration import DatasetRegistration
 from src.common.logger import logger
 from src.common.exceptions import DatasetNotFoundException
 from src.ingestion.config import DataIngestionConfig
-
+from src.ingestion.downloaders.kaggle_downloader import (
+    KaggleDownloader
+)
 
 class DataIngestion:
 
@@ -44,3 +46,15 @@ class DataIngestion:
         )
 
         return metadata
+    
+    def download_dataset(self):
+
+        downloader = KaggleDownloader()
+
+        dataset_path = (
+            downloader.download_dataset(
+                self.config.competition_name
+            )
+        )
+
+        return dataset_path
