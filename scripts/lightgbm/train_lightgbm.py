@@ -8,6 +8,8 @@ from src.models.lightgbm.model_store import (
     ModelStore
 )
 
+TRAIN_ROWS = 500_000
+
 
 def main():
 
@@ -23,7 +25,7 @@ def main():
             pl.col("lag_28")
             .is_not_null()
         )
-        .head(100000)
+        .head(TRAIN_ROWS)
     )
 
     print(
