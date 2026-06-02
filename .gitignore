@@ -1,46 +1,54 @@
 # Python
-
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 
-# Virtual Env
-
+# Virtual Environment
 .venv/
 
 # Jupyter
-
 .ipynb_checkpoints/
 
-# ML
-
+# MLflow
 mlruns/
 
 # DVC
-
 .dvc/cache/
 
-# OS
+# Data
+data/
 
-.DS_Store
-
-# IDE
-
-.idea/
-.vscode/
+# Models
+models/
 
 # Logs
-
 logs/
 *.log
 
 # Environment
-
 .env
 
-# Terraform
+# IDE
+.idea/
+.vscode/
 
+# OS
+.DS_Store
+
+# Terraform
 .terraform/
 *.tfstate
 *.tfstate.*
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Coverage
+.coverage
+htmlcov/
+
+# Testing
+.pytest_cache/
