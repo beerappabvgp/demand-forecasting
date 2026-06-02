@@ -8,7 +8,7 @@ from src.models.lightgbm.model_store import (
     ModelStore
 )
 
-TRAIN_ROWS = 500_000
+TRAIN_ROWS = 1_000_000
 
 
 def main():
