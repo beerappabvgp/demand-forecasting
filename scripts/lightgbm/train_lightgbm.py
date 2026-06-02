@@ -1,8 +1,11 @@
 import polars as pl
-import pandas as pd
 
 from src.models.lightgbm.trainer import (
     LightGBMTrainer
+)
+
+from src.models.lightgbm.model_store import (
+    ModelStore
 )
 
 
@@ -49,13 +52,31 @@ def main():
         )
     )
 
+    store = (
+        ModelStore()
+    )
+
+    model_path = (
+        "models/lightgbm_model.pkl"
+    )
+
+    print(
+        "Saving model"
+    )
+
+    store.save(
+        model,
+        model_path
+    )
+
     print()
+
     print(
         "Training completed"
     )
 
     print(
-        model
+        f"Saved model: {model_path}"
     )
 
 
