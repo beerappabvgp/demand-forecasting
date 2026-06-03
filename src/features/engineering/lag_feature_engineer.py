@@ -88,6 +88,17 @@ class LagFeatureEngineer:
 
             shifted_sales
             .rolling_mean(
+                window_size=14
+            )
+            .over(
+                ["item_id", "store_id"]
+            )
+            .alias(
+                "rolling_mean_14"
+            ),
+
+            shifted_sales
+            .rolling_mean(
                 window_size=28
             )
             .over(
@@ -110,6 +121,17 @@ class LagFeatureEngineer:
 
             shifted_sales
             .rolling_std(
+                window_size=14
+            )
+            .over(
+                ["item_id", "store_id"]
+            )
+            .alias(
+                "rolling_std_14"
+            ),
+
+            shifted_sales
+            .rolling_std(
                 window_size=28
             )
             .over(
@@ -117,6 +139,26 @@ class LagFeatureEngineer:
             )
             .alias(
                 "rolling_std_28"
+            )
+        )
+
+        logger.info(
+            "Creating trend features"
+        )
+
+        df = df.with_columns(
+
+            (
+                pl.col(
+                    "rolling_mean_7"
+                )
+                -
+                pl.col(
+                    "rolling_mean_28"
+                )
+            )
+            .alias(
+                "sales_trend"
             )
         )
 
