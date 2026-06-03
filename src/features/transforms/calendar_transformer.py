@@ -59,6 +59,25 @@ class CalendarTransformer:
             ]
         )
 
+        logger.info(
+            "Creating weekend feature"
+        )
+
+        df = df.with_columns(
+
+            pl.col("weekday")
+            .is_in(
+                [
+                    "Saturday",
+                    "Sunday"
+                ]
+            )
+            .cast(pl.Int8)
+            .alias(
+                "is_weekend"
+            )
+        )
+
         output_path.parent.mkdir(
             parents=True,
             exist_ok=True
