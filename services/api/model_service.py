@@ -31,7 +31,7 @@ class ForecastService:
             loader = DatasetLoader()
             df = loader.load_validation_data("data/training/validation_dataset.parquet")
             
-            # Get the last 14 days of history for every product
+                                                               
             df_history = df.sort("date").group_by(["item_id", "store_id"]).tail(14).to_pandas()
             
             for (item_id, store_id), group in df_history.groupby(["item_id", "store_id"]):
@@ -53,13 +53,13 @@ class ForecastService:
         except KeyError:
             raise ValueError(f"Product '{request.item_id}' at Store '{request.store_id}' not found in Feature Store.")
             
-        # 1. Normalize using the Transformer's own scaler
+                                                         
         scaled_sequence = cls._scaler.transform(historical_sequence)
         
-        # 2. Shape: (1, 14, 16) — (batch, sequence_len, features)
+                                                                 
         tensor_sequence = torch.tensor(scaled_sequence, dtype=torch.float32).unsqueeze(0)
         
-        # 3. Run through Transformer, no gradients needed during inference
+                                                                          
         with torch.no_grad():
             prediction = cls._model(tensor_sequence)
             

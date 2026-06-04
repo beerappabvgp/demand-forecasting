@@ -15,7 +15,7 @@ print("=" * 55)
 print("  Exporting Best Transformer Model for FastAPI")
 print("=" * 55)
 
-# ── Step 1: Build the StandardScaler via Lazy Streaming ─────
+                                                              
 print("\n[1/3] Fitting StandardScaler (Lazy Streaming)...")
 df_lazy = pl.scan_parquet("data/training/train_dataset.parquet")
 
@@ -38,7 +38,7 @@ scaler.var_   = scaler.scale_ ** 2
 joblib.dump(scaler, "models/transformer_scaler.pkl")
 print("    Saved → models/transformer_scaler.pkl")
 
-# ── Step 2: Fetch best Transformer run from MLflow ───────────
+                                                               
 print("\n[2/3] Fetching Best Transformer Run from MLflow...")
 mlflow.set_experiment("Demand_Forecasting_Transformer")
 experiment = mlflow.get_experiment_by_name("Demand_Forecasting_Transformer")
@@ -52,7 +52,7 @@ print(f"    Best Val MAE: {best_val_mae:.4f}")
 model_uri = f"runs:/{best_run_id}/transformer_model"
 mlflow_model = mlflow.pytorch.load_model(model_uri)
 
-# ── Step 3: Save model weights ───────────────────────────────
+                                                               
 print("\n[3/3] Saving model weights locally...")
 torch.save(mlflow_model.state_dict(), "models/transformer_model.pt")
 print("    Saved → models/transformer_model.pt")

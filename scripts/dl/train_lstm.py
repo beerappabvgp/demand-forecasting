@@ -70,7 +70,7 @@ def main():
         
         model = DemandLSTM(input_size=16, hidden_size=HIDDEN_SIZE, num_layers=NUM_LAYERS)
         
-        # Clean Trainer Object
+                              
         trainer = LSTMTrainer(model=model, learning_rate=LEARNING_RATE)
         trainer.train(train_dataloader, epochs=EPOCHS)
         trainer.evaluate(val_dataloader)

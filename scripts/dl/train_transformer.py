@@ -31,7 +31,7 @@ def load_data_memory_safe(path: str, sample_rows: int = None):
 
 def main():
     print("Loading Datasets (Memory Safe)...")
-    # Sample 2M rows for training — representative and fits in laptop RAM
+                                                                         
     df_train = load_data_memory_safe("data/training/train_dataset.parquet", sample_rows=2_000_000)
     df_val = load_data_memory_safe("data/training/validation_dataset.parquet")
     
@@ -79,7 +79,7 @@ def main():
             num_layers=NUM_LAYERS
         )
         
-        # We can reuse the exact same trainer we built for the LSTM!
+                                                                    
         trainer = LSTMTrainer(model=model, learning_rate=LEARNING_RATE)
         trainer.train(train_dataloader, epochs=EPOCHS)
         trainer.evaluate(val_dataloader)

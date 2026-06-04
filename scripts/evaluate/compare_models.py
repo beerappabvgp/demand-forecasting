@@ -26,7 +26,7 @@ def fetch_best_run(experiment_name: str, model_label: str) -> dict | None:
     
     runs = mlflow.search_runs(experiment_ids=[experiment.experiment_id])
     
-    # Filter out runs that have no val_mae logged
+                                                 
     runs = runs.dropna(subset=["metrics.val_mae"])
     
     if runs.empty:
@@ -40,7 +40,7 @@ def fetch_best_run(experiment_name: str, model_label: str) -> dict | None:
         col = f"metrics.{metric}"
         result[metric.upper()] = best[col] if col in best.index else None
     
-    # Grab key hyperparams if they exist
+                                        
     for param in ["epochs", "learning_rate", "num_layers", "hidden_size", "d_model", "nhead"]:
         col = f"params.{param}"
         if col in best.index and pd.notna(best[col]):
