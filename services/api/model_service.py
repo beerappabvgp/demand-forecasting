@@ -1,61 +1,72 @@
 import pandas as pd
-from src.models.lightgbm.model_store import ModelStore
-from src.models.lightgbm.predictor import LightGBMPredictor
-from src.models.lightgbm.trainer import LightGBMTrainer
+import torch
+import joblib
+import numpy as np
+
 from src.training.dataset_loader import DatasetLoader
 from services.api.schemas import PredictionRequest
+from src.models.dl.lstm import DemandLSTM
+from src.models.lightgbm.trainer import LightGBMTrainer
 
 class ForecastService:
     _model = None
-    _predictor = None
-    _feature_store = None  # This is our new in-memory Feature Store
+    _scaler = None
+    _feature_store = {}
     
     @classmethod
-    def load_model_and_features(cls, model_path: str = "models/lightgbm_model.pkl"):
+    def load_model_and_features(cls):
         """
-        Loads the model AND the latest features into memory at startup.
+        Loads the LSTM model, the Scaler, and the last 14 days of features into memory.
         """
         if cls._model is None:
-            print("Loading LightGBM model...")
-            cls._model = ModelStore().load(model_path)
-            cls._predictor = LightGBMPredictor()
+            print("Loading LSTM Model...")
+            # Initialize the architecture (64 neurons, 2 layers as stabilized)
+            cls._model = DemandLSTM(input_size=16, hidden_size=64, num_layers=2)
+            cls._model.load_state_dict(torch.load("models/lstm_model.pt", weights_only=True))
+            cls._model.eval() # Set to evaluation mode
             
-            print("Loading Feature Store (Latest product states)...")
+            print("Loading StandardScaler...")
+            cls._scaler = joblib.load("models/lstm_scaler.pkl")
+            
+            print("Loading Feature Store (Building 14-day sequences)...")
             loader = DatasetLoader()
+            # We load the validation data because it has the most recent dates
             df = loader.load_validation_data("data/training/validation_dataset.parquet")
             
-            # Get the maximum (latest) date available in our dataset
-            latest_date = df["date"].max()
+            # Sort by date, group by item and store, and take the last 14 days
+            df_history = df.sort("date").group_by(["item_id", "store_id"]).tail(14).to_pandas()
             
-            # Filter the dataframe to only keep the absolute latest row for every item
-            df_latest = df.filter(df["date"] == latest_date).to_pandas()
-            
-            # Create an index using item_id and store_id so we can look them up instantly
-            cls._feature_store = df_latest.set_index(["item_id", "store_id"])
-            
-            print("API Services Ready!")
+            # Store the 14-day history for each product in our dictionary cache
+            for (item_id, store_id), group in df_history.groupby(["item_id", "store_id"]):
+                # Extract only the 16 features we need for math
+                features_14_days = group[LightGBMTrainer.FEATURE_COLUMNS].values
+                cls._feature_store[(item_id, store_id)] = features_14_days
+                
+            print("API Services Ready with Deep Learning!")
     
     @classmethod
     def predict(cls, request: PredictionRequest) -> float:
         """
-        Looks up features in the Feature Store, then predicts.
+        Looks up the 14-day history, scales it, and passes it through the LSTM.
         """
-        if cls._model is None or cls._feature_store is None:
+        if cls._model is None or not cls._feature_store:
             raise RuntimeError("Services not loaded. Call load_model_and_features() first.")
             
         try:
-            # Look up the row in our feature store using the keys provided by the user
-            item_features = cls._feature_store.loc[(request.item_id, request.store_id)]
+            # Look up the 14 days of historical math features
+            historical_sequence = cls._feature_store[(request.item_id, request.store_id)]
         except KeyError:
-            # If the product/store combination doesn't exist, we reject the request
             raise ValueError(f"Product {request.item_id} at Store {request.store_id} not found in Feature Store.")
             
-        # Convert that single Pandas Series back into a 1-row DataFrame
-        input_data = pd.DataFrame([item_features.to_dict()])
+        # 1. Scale the data using our loaded StandardScaler
+        scaled_sequence = cls._scaler.transform(historical_sequence)
         
-        # Isolate just the math features LightGBM needs
-        features = input_data[LightGBMTrainer.FEATURE_COLUMNS]
+        # 2. Convert to PyTorch Tensor. 
+        # LSTM expects 3D shape: (Batch Size, Sequence Length, Features) -> (1, 14, 16)
+        tensor_sequence = torch.tensor(scaled_sequence, dtype=torch.float32).unsqueeze(0)
         
-        # Predict!
-        predictions = cls._predictor.predict(cls._model, features)
-        return float(predictions[0])
+        # 3. Predict!
+        with torch.no_grad():
+            prediction = cls._model(tensor_sequence)
+            
+        return float(prediction.item())
