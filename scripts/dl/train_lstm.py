@@ -22,7 +22,7 @@ def train_model():
     # Hyperparameters
     SEQ_LEN = 14
     BATCH_SIZE = 128
-    EPOCHS = 3
+    EPOCHS = 10
     LEARNING_RATE = 0.001
     
     with mlflow.start_run():
@@ -49,7 +49,7 @@ def train_model():
         # We have 16 features in our list
         model = DemandLSTM(input_size=16, hidden_size=64, num_layers=2)
         
-        criterion = nn.MSELoss() # Grades the mistakes using Mean Squared Error
+        criterion = nn.HuberLoss(delta = 5.0) # Grades the mistakes using Mean Squared Error
         optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
         
         print("Starting Training Loop...")
