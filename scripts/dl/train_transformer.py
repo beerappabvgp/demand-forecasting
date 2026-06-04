@@ -2,8 +2,9 @@ import mlflow
 import polars as pl
 from torch.utils.data import DataLoader
 
+from src.training.dataset_loader import DatasetLoader
 from src.models.dl.dataset import DemandSequenceDataset
-from src.models.dl.lstm import DemandLSTM
+from src.models.dl.transformer import DemandTransformer
 from src.models.dl.trainer import LSTMTrainer
 from src.models.lightgbm.trainer import LightGBMTrainer
 
@@ -30,16 +31,18 @@ def load_data_memory_safe(path: str, sample_rows: int = None):
 
 def main():
     print("Loading Datasets (Memory Safe)...")
+    # Sample 2M rows for training — representative and fits in laptop RAM
     df_train = load_data_memory_safe("data/training/train_dataset.parquet", sample_rows=2_000_000)
     df_val = load_data_memory_safe("data/training/validation_dataset.parquet")
     
-    mlflow.set_experiment("Demand_Forecasting_LSTM")
+    mlflow.set_experiment("Demand_Forecasting_Transformer")
     
     SEQ_LEN = 14  
     BATCH_SIZE = 128
     EPOCHS = 3    
     LEARNING_RATE = 0.0001
-    HIDDEN_SIZE = 64
+    D_MODEL = 64
+    NHEAD = 4
     NUM_LAYERS = 2
     
     with mlflow.start_run():
@@ -49,7 +52,8 @@ def main():
             "epochs": EPOCHS,
             "learning_rate": LEARNING_RATE,
             "loss_function": "HuberLoss",
-            "hidden_size": HIDDEN_SIZE,
+            "d_model": D_MODEL,
+            "nhead": NHEAD,
             "num_layers": NUM_LAYERS
         })
         
@@ -68,15 +72,20 @@ def main():
         )
         val_dataloader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
         
-        model = DemandLSTM(input_size=16, hidden_size=HIDDEN_SIZE, num_layers=NUM_LAYERS)
+        model = DemandTransformer(
+            input_size=16, 
+            d_model=D_MODEL, 
+            nhead=NHEAD,
+            num_layers=NUM_LAYERS
+        )
         
-        # Clean Trainer Object
+        # We can reuse the exact same trainer we built for the LSTM!
         trainer = LSTMTrainer(model=model, learning_rate=LEARNING_RATE)
         trainer.train(train_dataloader, epochs=EPOCHS)
         trainer.evaluate(val_dataloader)
         
         print("\nSaving Model to MLflow...")
-        mlflow.pytorch.log_model(model, "lstm_model")
+        mlflow.pytorch.log_model(model, "transformer_model")
 
 if __name__ == "__main__":
     main()
