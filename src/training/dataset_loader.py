@@ -5,8 +5,7 @@ class DatasetLoader:
 
     def load_training_data(
         self,
-        path: str,
-        train_rows: int
+        path: str
     ) -> pl.DataFrame:
 
         df = (
@@ -15,7 +14,6 @@ class DatasetLoader:
                 pl.col("lag_28")
                 .is_not_null()
             )
-            .head(train_rows)
         )
 
         df = (

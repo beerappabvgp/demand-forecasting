@@ -3,23 +3,22 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import mlflow
+import numpy as np
 import time
+from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 from src.training.dataset_loader import DatasetLoader
 from src.models.dl.dataset import DemandSequenceDataset
 from src.models.dl.lstm import DemandLSTM
-from src.models.lightgbm.trainer import LightGBMTrainer # Just to reuse the FEATURE_COLUMNS list
+from src.models.lightgbm.trainer import LightGBMTrainer
 
 def train_model():
     print("Loading Validation Dataset (Using it for quick training test)...")
     loader = DatasetLoader()
-    # To test locally without crashing, we will train on the smaller validation dataset first
     df = loader.load_validation_data("data/training/validation_dataset.parquet").to_pandas()
     
-    # 1. Setup MLflow
     mlflow.set_experiment("Demand_Forecasting_LSTM")
     
-    # Hyperparameters
     SEQ_LEN = 14
     BATCH_SIZE = 128
     EPOCHS = 10
@@ -30,10 +29,12 @@ def train_model():
             "sequence_length": SEQ_LEN,
             "batch_size": BATCH_SIZE,
             "epochs": EPOCHS,
-            "learning_rate": LEARNING_RATE
+            "learning_rate": LEARNING_RATE,
+            "loss_function": "HuberLoss",
+            "hidden_size": 64,
+            "num_layers": 2
         })
         
-        # 2. Build the Dataset and DataLoader
         print("Building 3D Sequence Dataset...")
         dataset = DemandSequenceDataset(
             df=df, 
@@ -42,14 +43,10 @@ def train_model():
             target_col="target_sales"
         )
         
-        # DataLoader handles sending batches to the model automatically
         dataloader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
         
-        # 3. Initialize Model, Loss Function, and Optimizer
-        # We have 16 features in our list
         model = DemandLSTM(input_size=16, hidden_size=64, num_layers=2)
-        
-        criterion = nn.HuberLoss(delta = 5.0) # Grades the mistakes using Mean Squared Error
+        criterion = nn.HuberLoss(delta=5.0)
         optimizer = optim.Adam(model.parameters(), lr=LEARNING_RATE)
         
         print("Starting Training Loop...")
@@ -57,24 +54,12 @@ def train_model():
             epoch_loss = 0.0
             start_time = time.time()
             
-            # Loop through the data in chunks of 128 sequences (The Batches)
             for batch_idx, (x_batch, y_batch) in enumerate(dataloader):
-                
-                # Step A: Reset the gradients (clear the memory of previous mistakes)
                 optimizer.zero_grad()
-                
-                # Step B: Forward Pass (The model makes a guess)
                 predictions = model(x_batch)
-                
-                # Step C: Calculate the Loss (Grade the guess)
                 loss = criterion(predictions, y_batch)
-                
-                # Step D: Backward Pass (Calculate the calculus gradients)
                 loss.backward()
-                
-                # Step E: Optimize (Update the neurons' weights)
                 optimizer.step()
-                
                 epoch_loss += loss.item()
                 
                 if batch_idx % 100 == 0:
@@ -83,11 +68,36 @@ def train_model():
             avg_loss = epoch_loss / len(dataloader)
             elapsed = time.time() - start_time
             print(f"--- Epoch {epoch+1} Complete | Avg Loss: {avg_loss:.4f} | Time: {elapsed:.1f} sec ---")
-            
-            # Log the loss to MLflow at the end of each epoch!
-            mlflow.log_metric("mse_loss", avg_loss, step=epoch)
-            
-        print("Training Complete! Saving Model to MLflow...")
+            mlflow.log_metric("huber_loss", avg_loss, step=epoch)
+        
+        # === EVALUATION PHASE ===
+        print("\nEvaluating LSTM on validation data...")
+        model.eval()  # Switch to evaluation mode (disables dropout)
+        
+        all_predictions = []
+        all_actuals = []
+        
+        eval_loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=False)
+        
+        with torch.no_grad():  # No gradient calculation needed for evaluation
+            for x_batch, y_batch in eval_loader:
+                preds = model(x_batch)
+                all_predictions.extend(preds.numpy().tolist())
+                all_actuals.extend(y_batch.numpy().tolist())
+        
+        all_predictions = np.array(all_predictions)
+        all_actuals = np.array(all_actuals)
+        
+        mae = mean_absolute_error(all_actuals, all_predictions)
+        rmse = np.sqrt(mean_squared_error(all_actuals, all_predictions))
+        
+        mlflow.log_metric("val_mae", mae)
+        mlflow.log_metric("val_rmse", rmse)
+        
+        print(f"Validation MAE: {mae:.4f}")
+        print(f"Validation RMSE: {rmse:.4f}")
+        
+        print("\nSaving Model to MLflow...")
         mlflow.pytorch.log_model(model, "lstm_model")
 
 if __name__ == "__main__":
