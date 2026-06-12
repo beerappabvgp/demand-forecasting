@@ -17,10 +17,13 @@ mlruns/
 .dvc/cache/
 
 # Data
-data/
+data/*
+!data/training/
+data/training/*
+!data/training/lightgbm_validation_dataset.parquet
 
 # Models
-models/
+# (We need the models folder for CI/CD and Docker builds, so we don't ignore it)
 
 # Logs
 logs/
@@ -40,6 +43,10 @@ logs/
 .terraform/
 *.tfstate
 *.tfstate.*
+*.tfstate.backup
+.terraform.lock.hcl
+terraform_*.zip*
+bin/terraform
 
 # Build
 build/
