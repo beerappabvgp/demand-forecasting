@@ -19,6 +19,11 @@ def root():
 def health():
     return {"status": "healthy"}
 
+@app.get("/valid-products")
+def get_valid_products():
+    keys = list(ForecastService._feature_store.keys())
+    return [{"item_id": k[0], "store_id": k[1]} for k in keys]
+
 @app.post("/predict", response_model=PredictionResponse)
 async def predict_demand(request: PredictionRequest):
     try:

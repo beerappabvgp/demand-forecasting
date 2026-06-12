@@ -33,6 +33,11 @@ output "ecr_serving_url" {
   value       = module.ecr.repository_url
 }
 
+output "api_endpoint" {
+  description = "DNS name of the Load Balancer"
+  value       = "http://${module.alb.alb_dns_name}"
+}
+
 output "iam_glue_role_arn" {
   description = "IAM Role ARN for AWS Glue Service"
   value       = module.iam.glue_role_arn

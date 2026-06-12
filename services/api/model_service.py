@@ -14,37 +14,24 @@ class ForecastService:
     
     @classmethod
     def load_model_and_features(cls):
-        """
-        Loads the Transformer model, the Scaler, and the last 14 days of 
-        features per product into memory at startup.
-        """
         if cls._model is None:
-            print("Loading Transformer Model...")
             cls._model = DemandTransformer(input_size=16, d_model=64, nhead=4, num_layers=2)
             cls._model.load_state_dict(torch.load("models/transformer_model.pt", weights_only=True))
             cls._model.eval()
             
-            print("Loading StandardScaler...")
             cls._scaler = joblib.load("models/transformer_scaler.pkl")
             
-            print("Loading Feature Store (Building 14-day sequences)...")
             loader = DatasetLoader()
-            df = loader.load_validation_data("data/training/validation_dataset.parquet")
+            df = loader.load_validation_data("data/training/lightgbm_validation_dataset.parquet")
             
-                                                               
             df_history = df.sort("date").group_by(["item_id", "store_id"]).tail(14).to_pandas()
             
             for (item_id, store_id), group in df_history.groupby(["item_id", "store_id"]):
                 features_14_days = group[LightGBMTrainer.FEATURE_COLUMNS].values
                 cls._feature_store[(item_id, store_id)] = features_14_days
-                
-            print(f"API Services Ready! Feature Store loaded {len(cls._feature_store)} products.")
     
     @classmethod
     def predict(cls, request: PredictionRequest) -> float:
-        """
-        Looks up 14-day history, normalizes it, and passes it through the Transformer.
-        """
         if cls._model is None or not cls._feature_store:
             raise RuntimeError("Services not loaded. Call load_model_and_features() first.")
             
@@ -53,13 +40,9 @@ class ForecastService:
         except KeyError:
             raise ValueError(f"Product '{request.item_id}' at Store '{request.store_id}' not found in Feature Store.")
             
-                                                         
         scaled_sequence = cls._scaler.transform(historical_sequence)
-        
-                                                                 
         tensor_sequence = torch.tensor(scaled_sequence, dtype=torch.float32).unsqueeze(0)
         
-                                                                          
         with torch.no_grad():
             prediction = cls._model(tensor_sequence)
             

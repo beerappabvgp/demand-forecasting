@@ -57,3 +57,23 @@ module "glue" {
   mlflow_bucket = module.s3.mlflow_bucket_name
   glue_role_arn = module.iam.glue_role_arn
 }
+
+module "alb" {
+  source            = "./modules/alb"
+  project_name      = var.project_name
+  vpc_id            = module.vpc.vpc_id
+  public_subnet_ids = module.vpc.public_subnet_ids
+  alb_sg_id         = module.vpc.alb_sg_id
+}
+
+module "ecs" {
+  source                 = "./modules/ecs"
+  project_name           = var.project_name
+  vpc_id                 = module.vpc.vpc_id
+  private_subnet_ids     = module.vpc.private_subnet_ids
+  ecs_sg_id              = module.vpc.ecs_sg_id
+  target_group_arn       = module.alb.target_group_arn
+  ecs_execution_role_arn = module.iam.ecs_execution_role_arn
+  ecs_autoscale_role_arn = module.iam.ecs_autoscale_role_arn
+  ecr_repository_url     = module.ecr.repository_url
+}
