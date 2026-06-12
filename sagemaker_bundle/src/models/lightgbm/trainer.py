@@ -1,7 +1,6 @@
 import lightgbm as lgb
 import pandas as pd
 import numpy as np
-import mlflow
 from sklearn.metrics import mean_absolute_error, mean_squared_error
 
 class LightGBMTrainer:
@@ -17,6 +16,7 @@ class LightGBMTrainer:
     TARGET_COLUMN = "target_sales"
 
     def train(self, dataset: pd.DataFrame, val_dataset: pd.DataFrame = None, experiment_name: str = "Demand_Forecasting_LightGBM"):
+        import mlflow
         mlflow.set_experiment(experiment_name)
         mlflow.lightgbm.autolog()
 
