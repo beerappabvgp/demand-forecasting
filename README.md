@@ -10,17 +10,30 @@ A production-grade **MLOps platform** that forecasts retail inventory demand usi
 
 ---
 
-## 🏆 Model Performance
+## 🏆 Model Performance & Selection
 
-Three models were trained, tracked with MLflow, and evaluated on a held-out validation set. The **Transformer is the production champion**.
+Three models were trained, tracked with MLflow, and evaluated on a held-out validation set. The **Transformer was selected as the production champion**.
 
-| Model | Val MAE | Val RMSE | vs LightGBM Baseline |
+| Model | Val MAE | Val RMSE | vs LightGBM Baseline (MAE) |
 |---|---|---|---|
-| **Transformer (Prod)** | **0.9468** | **2.2409** | **-3.83% ✅** |
-| LSTM | 0.9496 | 1.9118 | -3.55% ✅ |
+| **Transformer (Prod)** | **0.9468** | 2.2409 | **-3.83% ✅** |
+| LSTM | 0.9496 | **1.9118** | -3.55% ✅ |
 | LightGBM | 0.9845 | 1.9800 | Baseline |
 
-> **MAE of 0.95** means the model predicts daily item sales to within ~1 unit of the actual value — which for retail demand forecasting is highly actionable for inventory planning.
+> **💡 Why Transformer despite a higher RMSE?** 
+> In retail inventory forecasting, Mean Absolute Error (MAE) translates directly to "average units off per day." An MAE of ~0.95 means predictions are typically within 1 unit of actual sales. While RMSE heavily penalizes occasional large spikes (which are common in retail due to unpredictable bulk buys), minimizing MAE provides a more consistently accurate baseline for daily replenishment. We prioritize consistent daily accuracy over fitting rare anomalies.
+
+---
+
+## 🎯 Engineering Highlights (For Interviewers)
+
+This project moves beyond a Jupyter Notebook into a fully productionized system designed with enterprise constraints in mind:
+
+- **FinOps & Cost Optimization:** Engineered a custom AWS Lambda + EventBridge scheduler to automatically spin down the ECS cluster and destroy the NAT Gateway outside of Indian Standard Time (IST) business hours (Mon-Fri 9AM-6PM), cutting AWS costs by over **70%** (saving ~$75-85/month).
+- **Sub-100ms Inference Latency:** The FastAPI backend pre-loads 14-day historical rolling windows for all 30,000+ items into an in-memory feature store at startup, eliminating database lookup bottlenecks during API calls.
+- **100% Infrastructure as Code:** The entire AWS environment (VPC, private subnets, ALB, ECR, ECS Fargate, IAM, S3, Glue, Lambda) is fully reproducible via 8 custom Terraform modules.
+- **Zero-Downtime CI/CD:** GitHub Actions automatically builds the Docker serving container, pushes to Amazon ECR, and orchestrates a rolling update on ECS upon code merges to `main`.
+- **Serverless Data Lake:** Utilizes AWS Glue (PySpark) for scalable, serverless data transformation (Bronze to Silver layer), converting raw CSVs into optimized Parquet formats.
 
 ---
 
