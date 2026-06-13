@@ -76,29 +76,5 @@ resource "aws_appautoscaling_target" "ecs_target" {
   service_namespace  = "ecs"
   role_arn           = var.ecs_autoscale_role_arn
 }
-
-resource "aws_appautoscaling_scheduled_action" "scale_down" {
-  name               = "${var.project_name}-scale-down-nights-weekends"
-  service_namespace  = aws_appautoscaling_target.ecs_target.service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_target.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target.scalable_dimension
-  schedule           = "cron(30 13 ? * MON-FRI *)"
-
-  scalable_target_action {
-    min_capacity = 0
-    max_capacity = 0
-  }
-}
-
-resource "aws_appautoscaling_scheduled_action" "scale_up" {
-  name               = "${var.project_name}-scale-up-mornings"
-  service_namespace  = aws_appautoscaling_target.ecs_target.service_namespace
-  resource_id        = aws_appautoscaling_target.ecs_target.resource_id
-  scalable_dimension = aws_appautoscaling_target.ecs_target.scalable_dimension
-  schedule           = "cron(30 2 ? * MON-FRI *)"
-
-  scalable_target_action {
-    min_capacity = 1
-    max_capacity = 1
-  }
-}
+# NOTE: Scheduled scale-up/scale-down is now handled by the Lambda scheduler module.
+# See terraform/modules/scheduler/

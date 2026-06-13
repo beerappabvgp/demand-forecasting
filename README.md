@@ -25,7 +25,7 @@ Three models were trained, tracked with MLflow, and evaluated on a held-out vali
 
 ---
 
-## 🎯 Engineering Highlights (For Interviewers)
+## 🎯 Engineering Highlights 
 
 This project moves beyond a Jupyter Notebook into a fully productionized system designed with enterprise constraints in mind:
 
@@ -300,7 +300,3 @@ Every push to `main` that touches `services/`, `src/`, `Dockerfile`, or `require
 3. Forces a new ECS deployment to pick up the updated image
 
 ---
-
-## 📜 License
-
-This project is released under the MIT License. See [LICENSE.txt](LICENSE.txt) for details.

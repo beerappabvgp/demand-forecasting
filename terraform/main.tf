@@ -77,3 +77,19 @@ module "ecs" {
   ecs_autoscale_role_arn = module.iam.ecs_autoscale_role_arn
   ecr_repository_url     = module.ecr.repository_url
 }
+
+module "scheduler" {
+  source       = "./modules/scheduler"
+  project_name = var.project_name
+  aws_region   = var.aws_region
+
+  # ECS targets
+  ecs_cluster_name = "${var.project_name}-cluster"
+  ecs_service_name = "${var.project_name}-service"
+
+  # NAT Gateway management
+  public_subnet_id      = module.vpc.first_public_subnet_id
+  route_table_id        = module.vpc.private_route_table_id
+  nat_eip_allocation_id = module.vpc.nat_eip_allocation_id
+  initial_nat_gw_id     = module.vpc.nat_gateway_id
+}
